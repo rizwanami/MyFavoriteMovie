@@ -251,7 +251,7 @@ class LoginViewController: UIViewController {
         /* 1. Set the parameters */
         let methodParameters = [Constants.TMDBParameterKeys.ApiKey : Constants.TMDBParameterValues.ApiKey, Constants.TMDBParameterKeys.SessionID : sessionID]
         /* 2/3. Build the URL, Configure the request */
-        let request = URLRequest(url: appDelegate.tmdbURLFromParameters(methodParameters as [String : AnyObject],  withPathExtension : "/ account"))
+        let request = URLRequest(url: appDelegate.tmdbURLFromParameters(methodParameters as [String : AnyObject],  withPathExtension: "/account"))
         /* 4. Make the request */
         let task = appDelegate.sharedSession.dataTask(with: request) {(data,response,error) in
         
@@ -288,6 +288,7 @@ class LoginViewController: UIViewController {
         /* 6. Use the data! */
             
             guard let userID = parsedResult[Constants.TMDBResponseKeys.UserID]  else{
+                displayError(error: "There is no user ID")
                 return
             }
             print("This is UserID :\(userID)")
