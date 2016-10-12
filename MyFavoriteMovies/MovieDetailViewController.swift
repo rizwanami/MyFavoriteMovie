@@ -53,10 +53,11 @@ class MovieDetailViewController: UIViewController {
             
             /* 2/3. Build the URL, Configure the request */
             var request = URLRequest(url: appDelegate.tmdbURLFromParameters(methodParameters as [String : AnyObject], withPathExtension: "/account/\(appDelegate.userID!)/favorite/movies"))
-            request.addValue("application/json", forHTTPHeaderField: "Accept")
+            
+            
             
             /* 4A. Make the request */
-            let task = appDelegate.sharedSession.dataTask(with: request) { (data, response, error) in
+            let task = appDelegate.sharedSession.dataTask(with: request){ (data, response, error) in
                 
                 /* GUARD: Was there an error? */
                 guard (error == nil) else {
@@ -163,6 +164,7 @@ class MovieDetailViewController: UIViewController {
                 }) 
                 
                 /* 7B. Start the request */
+                toggleFavorite(isFavorite as AnyObject)
                 task.resume()
             }
         }
@@ -172,22 +174,66 @@ class MovieDetailViewController: UIViewController {
     
     @IBAction func toggleFavorite(_ sender: AnyObject) {
         
-        // let shouldFavorite = !isFavorite
+        let shouldFavorite = !isFavorite
+       
+
         
         /* TASK: Add movie as favorite, then update favorite buttons */
         /* 1. Set the parameters */
+        
+        let methodParameters = [Constants.TMDBParameterKeys.ApiKey : Constants.TMDBParameterValues.ApiKey, Constants.TMDBParameterKeys.SessionID : appDelegate.sessionID!]
+       
         /* 2/3. Build the URL, Configure the request */
-        /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
-        /* 7. Start the request */
-        
-        /* If the favorite/unfavorite request completes, then use this code to update the UI...
-        
+        let request = NSMutableURLRequest(url: appDelegate.tmdbURLFromParameters(methodParameters as [String : AnyObject], withPathExtension : "/account/\(appDelegate.userID!)/favorite"))
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("application/json", forHTTPHeaderField: "content-Type")
+        request.httpMethod = "Post"
+        request.httpBody = "{\"media_type\":\"movie\",\"media_id\":\(movie!.id),\"favorite\":\(shouldFavorite)}".data(using: String.Encoding.utf8)
+//        request.httpBody = "{\"media_type\": \"movie\",\"media_id\": \(movie!.id),\"favorite\":\(shouldFavorite)}".data(using: String.Encoding.utf8)
+//
+                     /* 4. Make the request */
+                           /* 5. Parse the data */
+        let task = appDelegate.sharedSession.dataTask(with: request as URLRequest) {
+            data, response, error in
+            
+            guard (error == nil ) else{
+                print(" There is an errro")
+                return
+            }
+            guard let statusCode = (response as? HTTPURLResponse)?.statusCode,  statusCode >= 200 && statusCode <= 299 else {
+                return
+            }
+            
+            
+            guard let data = data else {
+                return
+            }
+            let parsedResult : AnyObject
+            do { parsedResult = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.allowFragments) as! AnyObject } catch {
+                return
+            }
+            guard let tmdStatusCode = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int else{
+                return
+            }
+            if shouldFavorite && !(tmdStatusCode == 1 || tmdStatusCode == 12) {
+                print("This favorite")
+                return
+            } else if !shouldFavorite && tmdStatusCode != 13 {
+                print("NOt Favorite")
+                return
+            }
+            self.isFavorite = shouldFavorite
+            
+           
+            
         performUIUpdatesOnMain {
-            self.favoriteButton.tintColor = (shouldFavorite) ? nil : UIColor.blackColor()
+            self.favoriteButton.tintColor = (shouldFavorite) ? nil : UIColor.black
         }
         
-        */
     }
+    task.resume()
+
+         }
 }
+
+
